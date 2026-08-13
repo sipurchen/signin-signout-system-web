@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Signin Signout System",
+    "slug": "signin-signout-system-web",
+    "version": "1.0.0",
+    "platforms": [
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "web": {
+      "bundler": "metro"
+    },
+    "experiments": {
+      "baseUrl": "/signin-signout-system-web"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+# Codex BEGIN: project ignore rules / 專案忽略規則
+node_modules/
+.expo/
+.expo-home/
+dist/
+*.log
+# Codex END
