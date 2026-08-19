@@ -120,6 +120,25 @@ function normalizeUrl(value?: string) {
   return String(value ?? "").trim().replace(/\/+$/, "");
 }
 
+// A https page (e.g. GitHub Pages) cannot fetch a plain-http cache host: the browser
+// blocks it as mixed content before the request is even sent, which used to surface as a
+// generic "failed to fetch" and made the shared-cache write channel look broken.
+// 從 https 頁面（例如 GitHub Pages）呼叫純 http 的 cache host 會被瀏覽器當成
+// mixed content 直接擋下，連 request 都不會送出，過去只會顯示模糊的「failed to fetch」，
+// 讓人誤以為 shared-cache 這條寫入路徑本身壞掉。
+function isMixedContentBlocked(targetUrl: string) {
+  if (typeof window === "undefined" || window.location?.protocol !== "https:") {
+    return false;
+  }
+  return /^http:\/\//i.test(targetUrl.trim());
+}
+
+function mixedContentError(targetUrl: string) {
+  return new Error(
+    `cache-host-blocked-mixed-content: page is https but cache host URL "${targetUrl}" is http. Serve the cache host over https (e.g. via a tunnel) or use it from an http page. / 目前頁面是 https，但 cache host 網址 "${targetUrl}" 是 http，瀏覽器會直接封鎖，不會送出請求。請讓 cache host 也走 https（例如用 tunnel 工具），或改從 http 頁面存取。`,
+  );
+}
+
 async function fetchCsv(csvUrl: string) {
   const response = await fetch(csvUrl);
   if (!response.ok) {
@@ -139,6 +158,10 @@ async function fetchBinary(fileUrl: string) {
 }
 
 async function fetchJson(url: string, init?: RequestInit) {
+  if (isMixedContentBlocked(url)) {
+    throw mixedContentError(url);
+  }
+
   const response = await fetch(url, init);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -195,6 +218,12 @@ export function resolveCloudSyncPlan(config: SheetConfig): CloudSyncPlan {
     (config.runtimeMode === "cache-host" ? "host" : config.runtimeMode === "cache-client" ? "client" : "standalone");
 
   const warnings: string[] = [];
+  const cacheHostBlocked = Boolean(cacheServerUrl) && isMixedContentBlocked(cacheServerUrl);
+  const usableCacheServerUrl = cacheHostBlocked ? "" : cacheServerUrl;
+  if (cacheHostBlocked) {
+    warnings.push("cache-host-insecure-context");
+  }
+
   let readMode: CloudSyncPlan["readMode"];
   let writeMode: CloudSyncPlan["writeMode"] = "none";
   let sourceLabel = "local";
@@ -208,7 +237,7 @@ export function resolveCloudSyncPlan(config: SheetConfig): CloudSyncPlan {
   } else if (config.sourceType === "xlsx") {
     readMode = "local-file";
     sourceLabel = config.localFileName ? `xlsx:${config.localFileName}` : "xlsx";
-  } else if (role === "client" && cacheServerUrl) {
+  } else if (role === "client" && usableCacheServerUrl) {
     readMode = "shared-cache";
     sourceLabel = "shared csv cache";
   } else {
@@ -216,13 +245,13 @@ export function resolveCloudSyncPlan(config: SheetConfig): CloudSyncPlan {
     sourceLabel = config.sourceType === "remote-file" ? "remote drive file" : "google sheet";
   }
 
-  if ((role === "host" || role === "client") && cacheServerUrl) {
+  if ((role === "host" || role === "client") && usableCacheServerUrl) {
     writeMode = "shared-cache";
   } else if ((config.sourceType === "google-sheet" || config.sourceType === "remote-file") && googleAppsScriptUrl) {
     writeMode = "google-apps-script";
   }
 
-  if ((role === "host" || role === "client") && !cacheServerUrl) {
+  if ((role === "host" || role === "client") && !usableCacheServerUrl && !cacheHostBlocked) {
     warnings.push("cache-server-url-missing");
   }
 
@@ -230,7 +259,12 @@ export function resolveCloudSyncPlan(config: SheetConfig): CloudSyncPlan {
     warnings.push("remote-source-url-missing");
   }
 
-  if (inferredStrategy === "google-first-shared-csv" && !googleAppsScriptUrl) {
+  // Only nag about the Apps Script URL when it is genuinely the last remaining write
+  // path (no working shared-cache host). A configured CSV cache host is a complete
+  // write channel on its own and should never make this field look mandatory.
+  // 只有在 Apps Script 真的是唯一剩下的寫入路徑（沒有可用的 shared-cache host）時才提醒。
+  // 已設定好的 CSV cache host 本身就是完整的寫入通道，不該讓這欄看起來像必填。
+  if (inferredStrategy === "google-first-shared-csv" && writeMode !== "shared-cache" && !googleAppsScriptUrl) {
     warnings.push("google-apps-script-url-missing");
   }
 
@@ -242,7 +276,7 @@ export function resolveCloudSyncPlan(config: SheetConfig): CloudSyncPlan {
     sourceLabel,
     sourceUrl: config.sourceSheetUrl || config.sheetUrl || undefined,
     writableSheetUrl: config.sheetUrl || undefined,
-    cacheServerUrl: cacheServerUrl || undefined,
+    cacheServerUrl: usableCacheServerUrl || undefined,
     googleAppsScriptUrl: googleAppsScriptUrl || undefined,
     warnings,
   };
@@ -440,7 +474,7 @@ export async function syncGuestStatus(config: SheetConfig, payload: GuestUpdateP
   return {
     ok: false,
     channel: "none",
-    reason: "no-cloud-write-channel",
+    reason: plan.warnings.includes("cache-host-insecure-context") ? "cache-host-blocked-mixed-content" : "no-cloud-write-channel",
   };
 }
 
@@ -470,7 +504,7 @@ export async function syncGuestCreate(config: SheetConfig, payload: CreateGuestP
   return {
     ok: false,
     channel: "none",
-    reason: "no-cloud-write-channel",
+    reason: plan.warnings.includes("cache-host-insecure-context") ? "cache-host-blocked-mixed-content" : "no-cloud-write-channel",
   };
 }
 
