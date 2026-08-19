@@ -38,7 +38,7 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
   const [writableLinkOpen, setWritableLinkOpen] = useState(false);
   const [bridgeCheckState, setBridgeCheckState] = useState<BridgeCheckState>("idle");
   const [bridgeMeta, setBridgeMeta] = useState<GoogleBridgeMeta | null>(null);
-  const [bridgeMessage, setBridgeMessage] = useState("Bridge not checked yet / 尚未檢查 Apps Script Bridge");
+  const [bridgeMessage, setBridgeMessage] = useState("Bridge not checked yet / 尚未檢查寫入橋接");
   const sourceSheetInputRef = useRef<TextInput | null>(null);
   const workingSheetInputRef = useRef<TextInput | null>(null);
   const cacheServerInputRef = useRef<TextInput | null>(null);
@@ -152,7 +152,7 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
     if (!trimmedBridgeUrl) {
       setBridgeCheckState("error");
       setBridgeMeta(null);
-      setBridgeMessage("Missing Apps Script URL / 缺少 Apps Script URL");
+      setBridgeMessage("Missing bridge URL / 缺少寫入橋接網址");
       return;
     }
 
@@ -174,7 +174,7 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
 
   const sourceFileName = roster.config.localFileName || "No local XLSX selected / 尚未選擇本機 XLSX";
   const currentHostUrl = roster.config.cacheServerUrl || "Host not configured / 尚未設定 Host";
-  const bridgeUrlPreview = normalizeUrl(googleAppsScriptUrl) || "Apps Script URL not set / 尚未設定 Apps Script URL";
+  const bridgeUrlPreview = normalizeUrl(googleAppsScriptUrl) || "Bridge URL not set / 尚未設定寫入橋接網址";
 
   return (
     <ScrollView contentContainerStyle={styles.wrapper}>
@@ -299,7 +299,7 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
             <Text style={styles.warningText}>
               Settings uses `{nextConfig.worksheetName}` but the bridge reports `{bridgeMeta?.bridge?.defaultWorksheetName}`.
             </Text>
-            <Text style={styles.warningText}>Update either the settings field or the Apps Script `DEFAULT_WORKSHEET_NAME` property before go-live.</Text>
+            <Text style={styles.warningText}>Update either the settings field or the bridge's configured default worksheet name before go-live.</Text>
           </View>
         )}
         {!!syncPlan.warnings.length && (
