@@ -5,6 +5,7 @@ import { defaultSheetConfig, getSheetLabel } from "../config/sheet";
 import {
   createDemoGuests,
   createSimulationGuests,
+  loadGuests,
   loadGuestsForCloudSync,
   loadGuestsFromFile,
   loadSharedCacheState,
@@ -227,6 +228,42 @@ export function useGuestRoster() {
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
+      }
+    };
+  }, [config]);
+
+  // Direct-read (sheet-source) mode never had a refresh loop -- only the
+  // shared-cache path above polled. Guests on other devices writing through
+  // the bridge would only show up after a manual "Save and Reload", so add a
+  // slower poll here too (10s: Google's CSV export is cheap but not free,
+  // and this path can have many concurrent readers unlike a self-hosted cache).
+  const sheetSourcePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const syncPlan = resolveCloudSyncPlan(config);
+
+    if (sheetSourcePollRef.current) {
+      clearInterval(sheetSourcePollRef.current);
+      sheetSourcePollRef.current = null;
+    }
+
+    if (syncPlan.readMode !== "sheet-source" || (config.sourceType !== "google-sheet" && config.sourceType !== "remote-file")) {
+      return;
+    }
+
+    sheetSourcePollRef.current = setInterval(async () => {
+      try {
+        const loaded = await loadGuests(config);
+        setGuests(loaded);
+      } catch {
+        setLastMessage("Cloud sync polling failed for sheet-source read.");
+      }
+    }, 10000);
+
+    return () => {
+      if (sheetSourcePollRef.current) {
+        clearInterval(sheetSourcePollRef.current);
+        sheetSourcePollRef.current = null;
       }
     };
   }, [config]);
