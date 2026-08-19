@@ -240,10 +240,10 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
         />
         <Text style={styles.helperText}>
           If this page itself is loaded over https (e.g. GitHub Pages), the cache host URL must also be https — browsers silently block an
-          http cache host from an https page. This is a complete write channel on its own; Apps Script is not required.
+          http cache host from an https page. This is a complete write channel on its own; the write bridge (Apps Script or Cloudflare Worker) is not required.
         </Text>
         <Text style={styles.helperText}>
-          若此頁面本身是用 https 開啟（例如 GitHub Pages），CSV cache host 網址也必須是 https，否則瀏覽器會直接封鎖 http 主機、不會送出請求。這欄位本身就是完整的寫入通道，不需要另外設定 Apps Script。
+          若此頁面本身是用 https 開啟（例如 GitHub Pages），CSV cache host 網址也必須是 https，否則瀏覽器會直接封鎖 http 主機、不會送出請求。這欄位本身就是完整的寫入通道，不需要另外設定寫入橋接網址。
         </Text>
 
         <Text style={styles.label}>Worksheet Name / 工作表名稱</Text>
