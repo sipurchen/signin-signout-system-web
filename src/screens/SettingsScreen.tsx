@@ -181,9 +181,10 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
       <View style={[styles.panel, compactMode && styles.panelCompact]}>
         <Text style={styles.heading}>Cloud Sync Settings</Text>
         <Text style={styles.helperText}>
-          Source sheet or Drive file is for read/import. Writable sheet and Apps Script bridge are for cloud writeback. CSV cache host stays optional for LAN sync.
+          Source sheet or Drive file is for read/import. Writable sheet and the write bridge (Apps Script or Cloudflare
+          Worker) are for cloud writeback. CSV cache host stays optional for LAN sync.
         </Text>
-        <Text style={styles.helperText}>讀取來源用 `Source sheet`，雲端寫入用 `Writable sheet + Apps Script URL`，區網同步才需要 `CSV cache host`。</Text>
+        <Text style={styles.helperText}>讀取來源用 `Source sheet`，雲端寫入用 `Writable sheet + 寫入橋接網址`，區網同步才需要 `CSV cache host`。</Text>
 
         <Text style={styles.label}>Source Google Sheet URL / 唯讀來源 Google Sheet URL</Text>
         <TextInput
@@ -209,21 +210,22 @@ export function SettingsScreen({ roster, compactMode, onClose }: SettingsScreenP
           autoCorrect={false}
         />
 
-        <Text style={styles.label}>Apps Script Web App URL / Apps Script Web App 網址</Text>
+        <Text style={styles.label}>Write Bridge URL / 寫入橋接網址</Text>
         <TextInput
           ref={bridgeUrlInputRef}
           value={googleAppsScriptUrl}
           onChangeText={setGoogleAppsScriptUrl}
-          placeholder="Optional Apps Script Web App URL"
+          placeholder="Optional write bridge URL (Apps Script or Cloudflare Worker)"
           placeholderTextColor={theme.colors.placeholder}
           style={styles.input}
           autoCapitalize="none"
           autoCorrect={false}
         />
         <Text style={styles.helperText}>
-          Enter a deployed Apps Script Web App URL only when direct Google writeback is required.
+          Enter a deployed bridge URL only when direct Google writeback is required — either an Apps Script Web App or the
+          Cloudflare Worker bridge (see cloudflare-worker/README.md in the main repo).
         </Text>
-        <Text style={styles.helperText}>Make sure the bridge script property `DEFAULT_WORKSHEET_NAME` matches the worksheet name below.</Text>
+        <Text style={styles.helperText}>Make sure the bridge's default worksheet name matches the worksheet name below.</Text>
 
         <Text style={styles.label}>CSV cache host URL / CSV cache 主機 URL</Text>
         <TextInput
