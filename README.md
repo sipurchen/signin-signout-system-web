@@ -1,4 +1,3 @@
-<!-- ── Codex BEGIN: bilingual public README / 雙語公開 README ───────────────── -->
 # Signin Signout System Web
 
 Public WebUI repository for cloud-hosted guest check-in, checkpoint, and host operations.  
@@ -45,4 +44,3 @@ Only input the values you want to use at runtime.
   詳細欄位說明請見 [PUBLIC_PAGE_INPUT_GUIDE.md](./PUBLIC_PAGE_INPUT_GUIDE.md)。
 - Use that guide when deciding which fields are required, optional, or should stay blank on the public page.  
   如需判斷哪些欄位必填、選填、或應保持空白，請以該文件為準。
-<!-- ── Codex END ──────────────────────────────────────── -->

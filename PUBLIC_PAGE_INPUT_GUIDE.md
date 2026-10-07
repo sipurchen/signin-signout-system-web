@@ -1,4 +1,3 @@
-<!-- ── Codex BEGIN: bilingual public page input guide / 雙語公開頁輸入說明 ───────────────── -->
 # Public Page Input Guide / 公開頁輸入說明
 
 ## Page URL / 頁面網址
@@ -335,4 +334,3 @@ Use this when / 適用情況：
 
 - See also: `README.md`  
   另請參考：`README.md`
-<!-- ── Codex END ──────────────────────────────────────── -->
